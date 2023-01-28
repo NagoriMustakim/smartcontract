@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-contract MyToken is ERC20, Ownable, ERC721Holder {
+contract MyToken76 is ERC20, Ownable, ERC721Holder {
     IERC721 public nft;
     uint256 public EMMISION_RATE = (50 * 10**decimals()) / 1 days;
     mapping(uint256 => address) public tokenOwner; //token id to owner
