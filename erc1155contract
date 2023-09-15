@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+contract MyToken is ERC1155, Ownable {
+    using Strings for uint256;
+    uint8 private MAX_SUPPLY = 100;
+    uint8 public tokenIdCounter = 1;
+    string private baseURI;
+    mapping(uint256 => uint256) public idToAmount;
+    mapping(address => mapping(uint256 => bool)) public isMinted;
+
+    constructor(string memory _initBaseURI) ERC1155(_initBaseURI) {
+        baseURI = _initBaseURI;
+    }
+
+    modifier validTokenId(uint256 tokenId) {
+        require(tokenId >= 1 && tokenId <= MAX_SUPPLY, "Token ID out of range");
+        _;
+    }
+
+    function mint() public payable validTokenId(tokenIdCounter) {
+        require(!isMinted[msg.sender][tokenIdCounter], "You already minted");
+        uint256 currentPrice = getCurrentPrice(tokenIdCounter);
+        require(msg.value >= currentPrice, "incorrect price");
+        idToAmount[tokenIdCounter]++;
+        require(
+            idToAmount[tokenIdCounter] <= tokenIdCounter,
+            "Amount reached for this token"
+        );
+        isMinted[msg.sender][tokenIdCounter] = true;
+        _mint(msg.sender, tokenIdCounter, 1, "");
+
+        if (idToAmount[tokenIdCounter] == tokenIdCounter) {
+            tokenIdCounter++;
+        }
+    }
+
+    function getAmountforToken(uint256 _tokenId) public view returns (uint256) {
+        return idToAmount[_tokenId];
+    }
+
+    function setURI(string memory newuri) public onlyOwner {
+        _setURI(newuri);
+    }
+
+    function getCurrentPrice(uint256 tokenId)
+        public
+        view
+        validTokenId(tokenId)
+        returns (uint256)
+    {
+        return 10**16 + (MAX_SUPPLY - tokenId) * 10**16;
+    }
+
+    function tokenOfOwnerByIndex(address owner, uint256 tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        return balanceOf(owner, tokenId);
+    }
+
+    function uri(uint256 _tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        require(idToAmount[_tokenId] != 0, "token doesn't exist");
+        return (string(abi.encodePacked(baseURI, Strings.toString(_tokenId))));
+    }
+}
